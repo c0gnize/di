@@ -1,0 +1,21 @@
+{
+  "name": "di",
+  "version": "0.0.1",
+  "description": "A small library that helps to inject dependencies",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "dependency",
+    "injection",
+    "di",
+    "container"
+  ],
+  "author": "c0gnize",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^2.4.1",
+    "typescript": "^4.4.4"
+  }
+}
