@@ -35,42 +35,74 @@ export interface IService {
   _serviceBadge?: undefined;
 }
 
-export const IServiceContainer =
-  createDecorator<IServiceContainer>('IServiceContainer');
+export const IServiceContainer = createDecorator<IServiceContainer>('IServiceContainer');
 
 export interface IServiceContainer extends IService {}
+
+type Constructor<T, A extends any[]> = new (...args: A) => T;
+
+/* prettier-ignore */
+type GetLeadingNonServiceArgs<Args> =
+	Args extends [...IService[]] ? []
+	: Args extends [infer A1, ...IService[]] ? [A1]
+	: Args extends [infer A1, infer A2, ...IService[]] ? [A1, A2]
+	: Args extends [infer A1, infer A2, infer A3, ...IService[]] ? [A1, A2, A3]
+	: Args extends [infer A1, infer A2, infer A3, infer A4, ...IService[]] ? [A1, A2, A3, A4]
+	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IService[]] ? [A1, A2, A3, A4, A5]
+	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IService[]] ? [A1, A2, A3, A4, A5, A6]
+	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IService[]] ? [A1, A2, A3, A4, A5, A6, A7]
+	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
+	: never;
+/* prettier-ignore-end */
+
+interface ServiceItem<T, A extends any[]> {
+  ctor?: new (...args: A) => T;
+  args?: A;
+  instance?: T;
+  singletone?: boolean;
+}
 
 export class Container implements IServiceContainer {
   _serviceBadge?: undefined;
 
-  private services: Map<ServiceId<any>, any> = new Map();
+  private services: Map<ServiceId<any>, ServiceItem<any, any>> = new Map();
 
   constructor(private parent?: Container) {
-    this.services.set(IServiceContainer, this);
+    this.services.set(IServiceContainer, { instance: this });
+  }
+
+  set<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
+    id: ServiceId<T>,
+    ctor: C,
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
+  ): this {
+    this.throwIfExist(id);
+    this.services.set(id, { ctor, args });
+    return this;
   }
 
   get<T>(id: ServiceId<T>): T {
-    // if (!this.services.has(id)) {
-    //   throw new Error(`Service ${id} does not exist`);
-    // }
-    return this.services.get(id) ?? this.parent?.get(id);
+    const service = this.services.get(id) ?? this.parent?.services.get(id);
+    if (service !== undefined) {
+      if (service.instance !== undefined) {
+        return service.instance;
+      } else if (service.ctor !== undefined) {
+        const instance = this.create(service.ctor, ...(service.args ?? []));
+        if (service.singletone === true) {
+          service.instance = instance;
+        }
+        return instance;
+      }
+    }
+    throw new Error(`Service ${id} does not exist`);
   }
 
-  create<T>(ctor: any, args: any[] = []): T {
-    let dependencies = getDependencies(ctor).sort((a, b) => a.index - b.index);
-    let serviceArgs: any[] = [];
-    for (const dependency of dependencies) {
-      let service = this.get(dependency.id);
-      if (!service && !dependency.optional) {
-        throw new Error(
-          `${ctor.name} depends on UNKNOWN service ${dependency.id}.`,
-        );
-      }
-      serviceArgs.push(service);
-    }
-
-    let firstServiceArgPos =
-      dependencies.length > 0 ? dependencies[0].index : args.length;
+  create<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
+    ctor: C,
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
+  ): T {
+    const dependencies = getDependencies(ctor).sort((a, b) => a.index - b.index);
+    const firstServiceArgPos = dependencies.length > 0 ? dependencies[0].index : args.length;
 
     if (args.length !== firstServiceArgPos) {
       console.warn(
@@ -78,15 +110,18 @@ export class Container implements IServiceContainer {
           firstServiceArgPos + 1
         } conflicts with ${args.length} static arguments`,
       );
-
-      let delta = firstServiceArgPos - args.length;
-      if (delta > 0) {
-        args = args.concat(new Array(delta));
-      } else {
-        args = args.slice(0, firstServiceArgPos);
-      }
     }
 
-    return <T>new ctor(...[...args, ...serviceArgs]);
+    for (let i = 0; i < dependencies.length; i++) {
+      (args[i + firstServiceArgPos] as any) = this.get(dependencies[i].id);
+    }
+
+    return <T>new ctor(...args);
+  }
+
+  private throwIfExist<T>(id: ServiceId<T>) {
+    if (this.services.has(id)) {
+      throw new Error(`Service ${id} already exists`);
+    }
   }
 }
