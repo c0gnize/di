@@ -32,26 +32,19 @@ export function createDecorator<T>(serviceId: string): ServiceId<T> {
 }
 
 export interface IService {
-  _serviceBadge?: undefined;
+  _service?: undefined;
 }
 
-export const IServiceContainer = createDecorator<IServiceContainer>('IServiceContainer');
-
-export interface IServiceContainer extends IService {}
-
-type Constructor<T, A extends any[]> = new (...args: A) => T;
-
 /* prettier-ignore */
-type GetLeadingNonServiceArgs<Args> =
-	Args extends [...IService[]] ? []
-	: Args extends [infer A1, ...IService[]] ? [A1]
-	: Args extends [infer A1, infer A2, ...IService[]] ? [A1, A2]
-	: Args extends [infer A1, infer A2, infer A3, ...IService[]] ? [A1, A2, A3]
-	: Args extends [infer A1, infer A2, infer A3, infer A4, ...IService[]] ? [A1, A2, A3, A4]
-	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IService[]] ? [A1, A2, A3, A4, A5]
-	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IService[]] ? [A1, A2, A3, A4, A5, A6]
-	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IService[]] ? [A1, A2, A3, A4, A5, A6, A7]
-	: Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
+type LeadingNonServiceArgs<A> =
+	A extends [...IService[]] ? []
+	: A extends [infer A1, ...IService[]] ? [A1]
+	: A extends [infer A1, infer A2, ...IService[]] ? [A1, A2]
+	: A extends [infer A1, infer A2, infer A3, ...IService[]] ? [A1, A2, A3]
+	: A extends [infer A1, infer A2, infer A3, infer A4, ...IService[]] ? [A1, A2, A3, A4]
+	: A extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IService[]] ? [A1, A2, A3, A4, A5]
+	: A extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IService[]] ? [A1, A2, A3, A4, A5, A6]
+	: A extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IService[]] ? [A1, A2, A3, A4, A5, A6, A7]
 	: never;
 /* prettier-ignore-end */
 
@@ -62,23 +55,46 @@ interface ServiceItem<T, A extends any[]> {
   singletone?: boolean;
 }
 
+export const IServiceContainer = createDecorator<IServiceContainer>('IServiceContainer');
+
+export interface IServiceContainer extends IService {
+  create<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
+    ctor: C,
+    ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
+  ): T;
+  get<T>(id: ServiceId<T>): T;
+}
+
 export class Container implements IServiceContainer {
-  _serviceBadge?: undefined;
+  _service?: undefined;
 
   private services: Map<ServiceId<any>, ServiceItem<any, any>> = new Map();
 
   constructor(private parent?: Container) {
-    this.services.set(IServiceContainer, { instance: this });
+    this.setInstance(IServiceContainer, this);
   }
 
   set<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
     id: ServiceId<T>,
     ctor: C,
-    ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
-  ): this {
+    ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
+  ) {
     this.throwIfExist(id);
     this.services.set(id, { ctor, args });
-    return this;
+  }
+
+  setSingleton<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
+    id: ServiceId<T>,
+    ctor: C,
+    ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
+  ) {
+    this.throwIfExist(id);
+    this.services.set(id, { ctor, args, singletone: true });
+  }
+
+  setInstance<T extends IService>(id: ServiceId<T>, instance: T) {
+    this.throwIfExist(id);
+    this.services.set(id, { instance });
   }
 
   get<T>(id: ServiceId<T>): T {
@@ -99,21 +115,21 @@ export class Container implements IServiceContainer {
 
   create<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
     ctor: C,
-    ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
+    ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
   ): T {
-    const dependencies = getDependencies(ctor).sort((a, b) => a.index - b.index);
-    const firstServiceArgPos = dependencies.length > 0 ? dependencies[0].index : args.length;
+    const deps = getDependencies(ctor).sort((a, b) => a.index - b.index);
+    const start = deps.length > 0 ? deps[0].index : args.length;
 
-    if (args.length !== firstServiceArgPos) {
+    if (args.length !== start) {
       console.warn(
-        `First service dependency of ${ctor.name} at position ${
-          firstServiceArgPos + 1
-        } conflicts with ${args.length} static arguments`,
+        `First service dependency of ${ctor.name} at position ${start + 1} conflicts with ${
+          args.length
+        } static arguments`,
       );
     }
 
-    for (let i = 0; i < dependencies.length; i++) {
-      (args[i + firstServiceArgPos] as any) = this.get(dependencies[i].id);
+    for (let i = 0; i < deps.length; i++) {
+      (args[i + start] as any) = this.get(deps[i].id);
     }
 
     return <T>new ctor(...args);
