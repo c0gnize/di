@@ -7,7 +7,7 @@ interface IService1 extends IService {
 }
 
 class Service1 implements IService1 {
-  _service?: undefined;
+  declare _service: undefined;
   name = 'service-1';
 }
 
@@ -19,44 +19,50 @@ interface IService2 extends IService {
 }
 
 class Service2 implements IService2 {
+  declare _service: undefined;
   constructor(public name: string, @IService1 public s1: IService1) {}
 }
 
-class Service3 {
-  constructor(public name: string, @IService2 public s2: IService2) {}
+class Service2Consumer {
+  constructor(@IService2 public s2: IService2) {}
 }
 
-test('should correctly create object with dependency', () => {
+test('should correctly create an object with dependency', () => {
   const container = new Container();
   container.set(IService1, Service1);
-  const s2 = container.create(Service2, 'service-2');
-  expect(s2.name).toBe('service-2');
-  expect(s2.s1.name).toBe('service-1');
+  const consumer = container.create(Service2, 'service-2');
+  expect(consumer.name).toBe('service-2');
+  expect(consumer.s1.name).toBe('service-1');
 });
 
-test('should correctly create object with grand-dependency', () => {
+test('should return specified instance', () => {
+  const container = new Container();
+  const s1 = new Service1();
+  container.setInstance(IService1, s1);
+  expect(container.get(IService1)).toBe(s1);
+});
+
+test('should correctly create an object with grand dependency', () => {
   const container = new Container();
   container.set(IService1, Service1);
   container.set(IService2, Service2, 'service-2');
-  const s3 = container.create(Service3, 'service-3');
-  expect(s3.s2.s1.name).toBe('service-1');
+  const consumer = container.create(Service2Consumer);
+  expect(consumer.s2.s1.name).toBe('service-1');
 });
 
-test('should use singletone', () => {
+test('should create singleton', () => {
   const container = new Container();
   container.setSingleton(IService1, Service1);
-  const s2 = container.create(Service2, '');
-  const s22 = container.create(Service2, '');
-  expect(s2.s1.name).toBe('service-1');
-  s2.s1.name = 'service-1-singleton';
-  expect(s22.s1.name).toBe('service-1-singleton');
+  const consumer1 = container.create(Service2, '');
+  const consumer2 = container.create(Service2, '');
+  consumer1.s1.name = 'service-1-singleton';
+  expect(consumer2.s1.name).toBe('service-1-singleton');
 });
 
-test('should use instance', () => {
+test('should use specified instance', () => {
   const container = new Container();
   const s1 = new Service1();
-  s1.name = 'service-1-instance';
   container.setInstance(IService1, s1);
-  const s2 = container.create(Service2, 'service-2');
-  expect(s2.s1.name).toBe('service-1-instance');
+  const consumer = container.create(Service2, 'service-2');
+  expect(consumer.s1).toBe(s1);
 });

@@ -4,9 +4,8 @@ export interface ServiceId<T> {
 }
 
 interface Dependency {
-  id: ServiceId<any>;
+  id: ServiceId<unknown>;
   index: number;
-  optional?: boolean;
 }
 
 const DEPENDENCIES = '$dependencies';
@@ -25,18 +24,18 @@ function setDependency(target: any, dependency: Dependency) {
 
 export function createDecorator<T>(serviceId: string): ServiceId<T> {
   const id = (<ParameterDecorator>function (target, _, index) {
-    setDependency(target, { id, index, optional: false });
+    setDependency(target, { id, index });
   }) as ServiceId<T>;
   id.toString = () => serviceId;
   return id;
 }
 
 export interface IService {
-  _service?: undefined;
+  _service: undefined;
 }
 
 /* prettier-ignore */
-type LeadingNonServiceArgs<A> =
+export type LeadingNonServiceArgs<A> =
 	A extends [...IService[]] ? []
 	: A extends [infer A1, ...IService[]] ? [A1]
 	: A extends [infer A1, infer A2, ...IService[]] ? [A1, A2]
@@ -48,9 +47,9 @@ type LeadingNonServiceArgs<A> =
 	: never;
 /* prettier-ignore-end */
 
-interface ServiceItem<T, A extends any[]> {
-  ctor?: new (...args: A) => T;
-  args?: A;
+interface ServiceItem<T> {
+  ctor?: new (...args: any) => T;
+  args?: any;
   instance?: T;
   singletone?: boolean;
 }
@@ -58,24 +57,28 @@ interface ServiceItem<T, A extends any[]> {
 export const IServiceContainer = createDecorator<IServiceContainer>('IServiceContainer');
 
 export interface IServiceContainer extends IService {
-  create<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
+  create<C extends new (...args: any[]) => any>(
     ctor: C,
     ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
-  ): T;
+  ): InstanceType<C>;
   get<T>(id: ServiceId<T>): T;
 }
 
 export class Container implements IServiceContainer {
-  _service?: undefined;
+  declare _service: undefined;
 
-  private services: Map<ServiceId<any>, ServiceItem<any, any>> = new Map();
+  private services: Map<ServiceId<any>, ServiceItem<any>> = new Map();
 
   constructor(private parent?: Container) {
     this.setInstance(IServiceContainer, this);
   }
 
-  set<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
-    id: ServiceId<T>,
+  createChild(): Container {
+    return new Container(this);
+  }
+
+  set<C extends new (...args: any[]) => any>(
+    id: ServiceId<InstanceType<C>>,
     ctor: C,
     ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
   ) {
@@ -83,8 +86,8 @@ export class Container implements IServiceContainer {
     this.services.set(id, { ctor, args });
   }
 
-  setSingleton<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
-    id: ServiceId<T>,
+  setSingleton<C extends new (...args: any[]) => any>(
+    id: ServiceId<InstanceType<C>>,
     ctor: C,
     ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
   ) {
@@ -113,10 +116,10 @@ export class Container implements IServiceContainer {
     throw new Error(`Service ${id} does not exist`);
   }
 
-  create<C extends new (...args: any[]) => any, T extends InstanceType<C>>(
+  create<C extends new (...args: any[]) => any>(
     ctor: C,
     ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
-  ): T {
+  ): InstanceType<C> {
     const deps = getDependencies(ctor).sort((a, b) => a.index - b.index);
     const start = deps.length > 0 ? deps[0].index : args.length;
 
@@ -132,7 +135,7 @@ export class Container implements IServiceContainer {
       (args[i + start] as any) = this.get(deps[i].id);
     }
 
-    return <T>new ctor(...args);
+    return new ctor(...args);
   }
 
   private throwIfExist<T>(id: ServiceId<T>) {
