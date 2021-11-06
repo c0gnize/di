@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { ContainerProvider, useInstance, useService } from './hook';
+import { ContainerProvider, useInstance, useService } from './container-hook';
 import { Container, createDecorator, IService } from './container';
 
 const IService1 = createDecorator<IService1>('IService1');
@@ -20,8 +20,7 @@ const Service1Component: React.FC = () => {
 };
 
 test('should use service by id', () => {
-  const container = new Container();
-  container.set(IService1, Service1);
+  const container = new Container().set(IService1, Service1);
 
   const result = render(
     <ContainerProvider value={container}>
@@ -37,13 +36,12 @@ class Service1Consumer {
 }
 
 const Service1ConsumerComponent: React.FC = () => {
-  const s2 = useInstance(Service1Consumer, 'service-2');
-  return <div>{s2.name}</div>;
+  const consumer = useInstance(Service1Consumer, 'consumer');
+  return <div>{consumer.name}</div>;
 };
 
 test('should create instance', () => {
-  const container = new Container();
-  container.set(IService1, Service1);
+  const container = new Container().set(IService1, Service1);
 
   const result = render(
     <ContainerProvider value={container}>
@@ -51,5 +49,5 @@ test('should create instance', () => {
     </ContainerProvider>,
   );
 
-  expect(result.getByText('service-2')).toBeDefined();
+  expect(result.getByText('consumer')).toBeDefined();
 });

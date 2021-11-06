@@ -36,15 +36,15 @@ export interface IService {
 
 /* prettier-ignore */
 export type LeadingNonServiceArgs<A> =
-	A extends [...IService[]] ? []
-	: A extends [infer A1, ...IService[]] ? [A1]
-	: A extends [infer A1, infer A2, ...IService[]] ? [A1, A2]
-	: A extends [infer A1, infer A2, infer A3, ...IService[]] ? [A1, A2, A3]
-	: A extends [infer A1, infer A2, infer A3, infer A4, ...IService[]] ? [A1, A2, A3, A4]
-	: A extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IService[]] ? [A1, A2, A3, A4, A5]
-	: A extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IService[]] ? [A1, A2, A3, A4, A5, A6]
-	: A extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IService[]] ? [A1, A2, A3, A4, A5, A6, A7]
-	: never;
+  A extends [...IService[]] ? []
+  : A extends [infer A1, ...IService[]] ? [A1]
+  : A extends [infer A1, infer A2, ...IService[]] ? [A1, A2]
+  : A extends [infer A1, infer A2, infer A3, ...IService[]] ? [A1, A2, A3]
+  : A extends [infer A1, infer A2, infer A3, infer A4, ...IService[]] ? [A1, A2, A3, A4]
+  : A extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IService[]] ? [A1, A2, A3, A4, A5]
+  : A extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IService[]] ? [A1, A2, A3, A4, A5, A6]
+  : A extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IService[]] ? [A1, A2, A3, A4, A5, A6, A7]
+  : never;
 /* prettier-ignore-end */
 
 interface ServiceItem<T> {
@@ -77,27 +77,30 @@ export class Container implements IServiceContainer {
     return new Container(this);
   }
 
-  set<C extends new (...args: any[]) => any>(
-    id: ServiceId<InstanceType<C>>,
+  set<T, C extends new (...args: any[]) => any>(
+    id: ServiceId<T>,
     ctor: C,
     ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
-  ) {
+  ): this {
     this.throwIfExist(id);
     this.services.set(id, { ctor, args });
+    return this;
   }
 
-  setSingleton<C extends new (...args: any[]) => any>(
-    id: ServiceId<InstanceType<C>>,
+  setSingleton<T, C extends new (...args: any[]) => any>(
+    id: ServiceId<T>,
     ctor: C,
     ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
-  ) {
+  ): this {
     this.throwIfExist(id);
     this.services.set(id, { ctor, args, singletone: true });
+    return this;
   }
 
-  setInstance<T extends IService>(id: ServiceId<T>, instance: T) {
+  setInstance<T>(id: ServiceId<T>, instance: T): this {
     this.throwIfExist(id);
     this.services.set(id, { instance });
+    return this;
   }
 
   get<T>(id: ServiceId<T>): T {

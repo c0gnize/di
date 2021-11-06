@@ -36,8 +36,8 @@ test('should correctly create an object with dependency', () => {
 });
 
 test('should return specified instance', () => {
-  const container = new Container();
   const s1 = new Service1();
+  const container = new Container();
   container.setInstance(IService1, s1);
   expect(container.get(IService1)).toBe(s1);
 });
@@ -60,8 +60,8 @@ test('should create singleton', () => {
 });
 
 test('should use specified instance', () => {
-  const container = new Container();
   const s1 = new Service1();
+  const container = new Container();
   container.setInstance(IService1, s1);
   const consumer = container.create(Service2, 'service-2');
   expect(consumer.s1).toBe(s1);
