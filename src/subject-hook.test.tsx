@@ -1,31 +1,33 @@
 import * as React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
-import { ContainerProvider } from './container-hook';
 import { Container, createDecorator, IService } from './container';
+import { ContainerProvider } from './container-hook';
 import { ISubject, Subject } from './subject';
 import { useServiceSubject } from './subject-hook';
 
 const IUser = createDecorator<IUser>('IUser');
 
 interface IUser extends IService, ISubject {
-  loggedIn: boolean;
+  logged: boolean;
   toggle(): void;
 }
 
 class User extends Subject implements IUser {
   declare _service: undefined;
 
-  loggedIn = false;
+  logged = false;
 
   toggle() {
-    this.loggedIn = !this.loggedIn;
+    this.logged = !this.logged;
     this.notify();
   }
 }
 
 const UserButton: React.FC = () => {
   const user = useServiceSubject(IUser);
-  return <button onClick={() => user.toggle()}>{user.loggedIn ? 'Logout' : 'Log In'}</button>;
+  return (
+    <button onClick={() => user.toggle()}>{user.logged ? 'Logout' : 'Log In'}</button>
+  );
 };
 
 test('should rerender component on notify', async () => {
@@ -38,5 +40,6 @@ test('should rerender component on notify', async () => {
   );
 
   fireEvent.click(screen.getByText('Log In'));
+
   expect(await screen.findByText('Logout')).toBeDefined();
 });

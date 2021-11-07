@@ -128,9 +128,9 @@ export class Container implements IServiceContainer {
 
     if (args.length !== start) {
       console.warn(
-        `First service dependency of ${ctor.name} at position ${start + 1} conflicts with ${
-          args.length
-        } static arguments`,
+        `First service dependency of ${ctor.name} at position ${
+          start + 1
+        } conflicts with ${args.length} static arguments`,
       );
     }
 

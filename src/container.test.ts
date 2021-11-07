@@ -42,7 +42,7 @@ test('should return specified instance', () => {
   expect(container.get(IService1)).toBe(s1);
 });
 
-test('should correctly create an object with grand dependency', () => {
+test('should correctly create an object with dependency which has own dependency', () => {
   const container = new Container();
   container.set(IService1, Service1);
   container.set(IService2, Service2, 'service-2');
@@ -61,8 +61,22 @@ test('should create singleton', () => {
 
 test('should use specified instance', () => {
   const s1 = new Service1();
-  const container = new Container();
-  container.setInstance(IService1, s1);
-  const consumer = container.create(Service2, 'service-2');
+  const consumer = new Container()
+    .setInstance(IService1, s1)
+    .create(Service2, 'service-2');
   expect(consumer.s1).toBe(s1);
+});
+
+test('should not accept duplicate', () => {
+  const container = new Container().set(IService1, Service1);
+  expect(() => container.set(IService1, Service1)).toThrow();
+});
+
+test('should return service from parent', () => {
+  const consumer = new Container()
+    .set(IService1, Service1)
+    .createChild()
+    .set(IService2, Service2, 'service-2')
+    .create(Service2Consumer);
+  expect(consumer.s2.s1.name).toBe('service-1');
 });

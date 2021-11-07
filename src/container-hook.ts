@@ -1,13 +1,12 @@
-import { createContext, useContext, useMemo, createElement } from 'react';
-
+import { createContext, useContext, useMemo } from 'react';
 import { Container, LeadingNonServiceArgs, ServiceId } from './container';
 
-const ContainerContext = createContext(new Container());
+const Context = createContext(new Container());
 
-export const ContainerProvider = ContainerContext.Provider;
+export const ContainerProvider = Context.Provider;
 
-export function useContainer() {
-  return useContext(ContainerContext);
+export function useContainer(): Container {
+  return useContext(Context);
 }
 
 export function useService<T>(id: ServiceId<T>): T {
@@ -22,8 +21,8 @@ export function useInstance<C extends new (...args: any[]) => any>(
   return useMemo(() => container.create(ctor, ...args), [container]);
 }
 
-export const ChildContainerProvider: React.FC = (props) => {
+export function useContainerChild(cb: (container: Container) => Container): Container {
   const container = useContainer();
-  const value = useMemo(() => container.createChild(), [container]);
-  return createElement(ContainerProvider, { value }, props.children);
-};
+  const child = useMemo(() => container.createChild(), [container]);
+  return cb(child);
+}

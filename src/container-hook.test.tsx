@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { ContainerProvider, useInstance, useService } from './container-hook';
 import { Container, createDecorator, IService } from './container';
+import { ContainerProvider, useInstance, useService } from './container-hook';
 
 const IService1 = createDecorator<IService1>('IService1');
 
@@ -15,8 +15,8 @@ class Service1 implements IService1 {
 }
 
 const Service1Component: React.FC = () => {
-  const s1 = useService(IService1);
-  return <div>{s1.name}</div>;
+  const d = useService(IService1);
+  return <div>{d.name}</div>;
 };
 
 test('should use service by id', () => {
@@ -36,8 +36,8 @@ class Service1Consumer {
 }
 
 const Service1ConsumerComponent: React.FC = () => {
-  const consumer = useInstance(Service1Consumer, 'consumer');
-  return <div>{consumer.name}</div>;
+  const d = useInstance(Service1Consumer, 'consumer');
+  return <div>{d.name}</div>;
 };
 
 test('should create instance', () => {
