@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
-import { Container, createDecorator, IService } from './container';
+import { Container } from './container';
+import { decorator, IService } from './decorator';
 import { ContainerProvider } from './container-hook';
 import { ISubject, Subject } from './subject';
 import { useServiceSubject } from './subject-hook';
 
-const IUser = createDecorator<IUser>('IUser');
+const IUser = decorator<IUser>('IUser');
 
 interface IUser extends IService, ISubject {
   logged: boolean;

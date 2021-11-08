@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo } from 'react';
-import { Container, LeadingNonServiceArgs, ServiceId } from './container';
+import { Container, LeadingNonServiceArgs } from './container';
+import type { ServiceId } from './decorator';
 
 const Context = createContext(new Container());
 

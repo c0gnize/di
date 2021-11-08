@@ -1,38 +1,4 @@
-export interface ServiceId<T> {
-  (...args: any[]): void;
-  type: T;
-}
-
-interface Dependency {
-  id: ServiceId<unknown>;
-  index: number;
-}
-
-const DEPENDENCIES = '$dependencies';
-
-export function getDependencies(target: any): Dependency[] {
-  return target[DEPENDENCIES] || [];
-}
-
-function setDependency(target: any, dependency: Dependency) {
-  if (Array.isArray(target[DEPENDENCIES])) {
-    target[DEPENDENCIES].push(dependency);
-  } else {
-    target[DEPENDENCIES] = [dependency];
-  }
-}
-
-export function createDecorator<T>(serviceId: string): ServiceId<T> {
-  const id = (<ParameterDecorator>function (target, _, index) {
-    setDependency(target, { id, index });
-  }) as ServiceId<T>;
-  id.toString = () => serviceId;
-  return id;
-}
-
-export interface IService {
-  _service: undefined;
-}
+import { decorator, getDeps, IService, ServiceId } from './decorator';
 
 /* prettier-ignore */
 export type LeadingNonServiceArgs<A> =
@@ -54,7 +20,7 @@ interface ServiceItem<T> {
   singletone?: boolean;
 }
 
-export const IServiceContainer = createDecorator<IServiceContainer>('IServiceContainer');
+export const IServiceContainer = decorator<IServiceContainer>('IServiceContainer');
 
 export interface IServiceContainer extends IService {
   create<C extends new (...args: any[]) => any>(
@@ -123,7 +89,7 @@ export class Container implements IServiceContainer {
     ctor: C,
     ...args: LeadingNonServiceArgs<ConstructorParameters<C>>
   ): InstanceType<C> {
-    const deps = getDependencies(ctor).sort((a, b) => a.index - b.index);
+    const deps = getDeps(ctor).sort((a, b) => a.index - b.index);
     const start = deps.length > 0 ? deps[0].index : args.length;
 
     if (args.length !== start) {

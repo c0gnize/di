@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { Container, createDecorator, IService } from './container';
+import { Container } from './container';
+import { decorator, IService } from './decorator';
 import { ContainerProvider, useInstance, useService } from './container-hook';
 
-const IService1 = createDecorator<IService1>('IService1');
+const IService1 = decorator<IService1>('IService1');
 
 interface IService1 extends IService {
   name: string;

@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { Container, createDecorator, IService } from './container';
+import { Container } from './container';
+import { decorator, IService } from './decorator';
 import { ContainerProvider, useContainerChild, useService } from './container-hook';
 
-const ITestService = createDecorator<ITestService>('ITestService');
+const ITestService = decorator<ITestService>('ITestService');
 
 interface ITestService extends IService {
   text: string;
@@ -24,23 +25,21 @@ const Text: React.FC = () => {
   return <div>{s.text}</div>;
 };
 
-const RedeclareProvider: React.FC = (props) => {
+const ChildProvider: React.FC = (props) => {
   const value = useContainerChild((d) => d.set(ITestService, Service2));
-  return <ContainerProvider value={value} {...props} />;
+  return <ContainerProvider value={value}>{props.children}</ContainerProvider>;
 };
 
-test('should use different implementation of service', () => {
+test('second Text should use redefined service', () => {
   const result = render(
     <ContainerProvider value={new Container().set(ITestService, Service1)}>
       <Text />
-      <RedeclareProvider>
+      <ChildProvider>
         <Text />
-      </RedeclareProvider>
+      </ChildProvider>
     </ContainerProvider>,
   );
 
   expect(result.getByText('trick')).toBeDefined();
   expect(result.getByText('treat')).toBeDefined();
 });
-
-test('should use another implementation of service', () => {});

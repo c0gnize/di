@@ -1,6 +1,7 @@
-import { Container, createDecorator, IService } from './container';
+import { Container } from './container';
+import { decorator, IService } from './decorator';
 
-const IService1 = createDecorator<IService1>('IService1');
+const IService1 = decorator<IService1>('IService1');
 
 interface IService1 extends IService {
   name: string;
@@ -11,7 +12,7 @@ class Service1 implements IService1 {
   name = 'service-1';
 }
 
-const IService2 = createDecorator<IService2>('IService2');
+const IService2 = decorator<IService2>('IService2');
 
 interface IService2 extends IService {
   name: string;
