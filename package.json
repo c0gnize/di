@@ -2,9 +2,12 @@
   "name": "di",
   "version": "0.0.1",
   "description": "A small library that helps to inject dependencies",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "dependency",
@@ -13,7 +16,7 @@
     "container"
   ],
   "author": "c0gnize",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@testing-library/react": "^12.1.2",
     "@types/jest": "^27.0.2",
