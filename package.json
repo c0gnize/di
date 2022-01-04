@@ -1,5 +1,5 @@
 {
-  "name": "di",
+  "name": "@c0gnize/di",
   "version": "0.0.1",
   "description": "A small library that helps to inject dependencies",
   "main": "./dist/index.js",
