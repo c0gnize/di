@@ -1,6 +1,6 @@
 {
   "name": "@c0gnize/di",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A small library that helps to inject dependencies",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,6 +9,9 @@
     "build": "tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "dependency",
     "injection",
